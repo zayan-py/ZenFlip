@@ -1,20 +1,30 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# ZenFlip: Minimalist Flip Clock & Focus
 
-# Run and deploy your AI Studio app
+A premium, distraction-free flip clock, timer, and pomodoro web application. Built with React 19, Tailwind CSS, and Framer Motion.
 
-This contains everything you need to run your app locally.
+## 🚀 "No-Build" Architecture
+This project is unique because it uses **Native ES Modules** and an **Import Map**. 
+- **No Node.js/NPM required** for basic hosting.
+- **No Build Step**: The browser handles the JSX/TSX transformation (in this environment) or you can serve it as-is if using a standard JS setup.
+- **GitHub Pages Ready**: Upload the files directly to your repository and enable Pages in the settings.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1It4_hFKw_ctKYyG7hIkAF6Q6E10iB6LF
+## 🛠 Features
+- **3 Modes**: Classic Clock (12h/24h), Precision Timer, and Pomodoro.
+- **Customizable**: 8+ Themes (including AMOLED and Retro Amber) and various fonts (Roboto Mono, JetBrains Mono, etc.).
+- **Ambient Audio**: Digital, Mechanical, Soft, and Flip-style ticking sounds.
+- **Stealth UI**: The interface and mouse cursor automatically hide during focus sessions.
+- **Locked Mode**: Prevent UI distractions with a corner-lock feature.
+- **High-Precision**: Timer supports centisecond accuracy for a smooth flip animation.
 
-## Run Locally
+## ⌨️ Keyboard Shortcuts
+- `Space`: Start / Pause Timer or Pomodoro.
+- `R`: Reset Timer / Restart Pomodoro cycle.
+- `F`: Toggle Fullscreen mode.
 
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 📂 Project Structure
+- `index.html`: Entry point with Import Map for dependencies.
+- `App.tsx`: Main application logic, state management, and layout.
+- `components/`: UI components (FlipUnit, FlipDigit, Controls).
+- `services/`: Core logic (SoundManager).
+- `constants.ts`: Theme and Font definitions.
+- `types.ts`: TypeScript interfaces and Enums.

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Mode, AppSettings, SoundSettings, Theme, Font } from './types';
 import { THEMES, FONTS } from './constants';
@@ -6,6 +5,9 @@ import FlipUnit from './components/FlipUnit';
 import Controls from './components/Controls';
 import { soundManager } from './services/SoundManager';
 
+/**
+ * Default fallback settings for new users
+ */
 const DEFAULT_SETTINGS: AppSettings = {
   themeId: 'amoled',
   fontId: 'rob-mono',
@@ -21,7 +23,12 @@ const DEFAULT_SETTINGS: AppSettings = {
   }
 };
 
+/**
+ * Main ZenFlip Application Component
+ * Handles global state, interval ticking, and auto-hide UI logic.
+ */
 const App: React.FC = () => {
+  // --- State Initialization ---
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('zenflip_settings');
     if (saved) {
@@ -45,6 +52,9 @@ const App: React.FC = () => {
   const [isLocked, setIsLocked] = useState(false);
   const lastInteractionRef = useRef(Date.now());
 
+  /**
+   * Updates global settings and persists them automatically
+   */
   const updateSettings = (newSettings: Partial<AppSettings>) => {
     setSettings(prev => ({ ...prev, ...newSettings }));
   };
@@ -53,7 +63,9 @@ const App: React.FC = () => {
     localStorage.setItem('zenflip_settings', JSON.stringify(settings));
   }, [settings]);
 
-  // Monitor fullscreen changes
+  /**
+   * Fullscreen handling logic
+   */
   useEffect(() => {
     const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handleFsChange);
@@ -68,13 +80,17 @@ const App: React.FC = () => {
     }
   };
 
-  // Main tick logic
+  /**
+   * Main Heartbeat Interval
+   * Handles Clock time updates and Timer/Pomodoro decrements.
+   */
   useEffect(() => {
     const interval = setInterval(() => {
       if (mode === Mode.CLOCK) {
         const now = new Date();
         setTime(now);
         
+        // Handle audio ticking intervals for clock
         if (settings.sound.tickInterval !== 'off') {
           const s = now.getSeconds();
           const m = now.getMinutes();
@@ -96,7 +112,10 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [mode, timerActive, timerLeft, settings.sound.tickType, settings.sound.tickInterval, settings.sound.tickVolume]);
 
-  // Timer Completion
+  /**
+   * Pomodoro State Machine
+   * Manages transitions between focus and break phases.
+   */
   useEffect(() => {
     if (timerActive && timerLeft === 0) {
       setTimerActive(false);
@@ -116,7 +135,10 @@ const App: React.FC = () => {
     }
   }, [timerLeft, timerActive, mode, pomoPhase, settings.pomoBreak, settings.pomoFocus, settings.pomoCycles]);
 
-  // Sync mode changes or duration changes to timer state
+  /**
+   * Mode Sync
+   * Ensures timer values are reset correctly when switching modes.
+   */
   useEffect(() => {
     if (!timerActive) {
       if (mode === Mode.TIMER) setTimerLeft(settings.timerDuration);
@@ -124,7 +146,10 @@ const App: React.FC = () => {
     }
   }, [mode, settings.timerDuration, settings.pomoFocus]);
 
-  // Auto-hide UI system (including mouse cursor)
+  /**
+   * Stealth System
+   * Automatically hides UI elements and the cursor after inactivity.
+   */
   useEffect(() => {
     const checkIdle = setInterval(() => {
       if (Date.now() - lastInteractionRef.current > 3000) {
@@ -153,6 +178,9 @@ const App: React.FC = () => {
     };
   }, [isLocked]);
 
+  /**
+   * Keyboard Shortcut Listener
+   */
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
@@ -174,6 +202,9 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKey);
   }, [mode, settings.timerDuration, settings.pomoFocus]);
 
+  /**
+   * Logic to determine what values to send to the Flip units
+   */
   const getDisplayTime = () => {
     if (mode === Mode.CLOCK) {
       let h = time.getHours();
@@ -216,7 +247,7 @@ const App: React.FC = () => {
         )}
       </button>
 
-      {/* Top Overlay: Phase Indicators (Shifted up so they don't offset central flex) */}
+      {/* Top Overlay: Phase Indicators */}
       <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-20 transition-all duration-700 ${uiVisible && !isLocked ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
         {mode === Mode.POMODORO && (
           <div className={`text-[10px] sm:text-xs uppercase tracking-[0.5em] font-black ${theme.accent} bg-black/5 px-4 py-1.5 rounded-full border border-black/5`}>
@@ -250,7 +281,7 @@ const App: React.FC = () => {
         )}
       </div>
 
-      {/* Bottom Overlay: Play/Reset Controls (Shifted down so they don't offset central flex) */}
+      {/* Bottom Overlay: Play/Reset Controls */}
       {(mode === Mode.TIMER || mode === Mode.POMODORO) && (
         <div className={`fixed bottom-28 left-1/2 -translate-x-1/2 z-20 flex gap-12 transition-all duration-700 ${uiVisible && !isLocked ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
           <button 
