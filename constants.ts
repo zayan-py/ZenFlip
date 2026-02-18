@@ -1,6 +1,9 @@
-
 import { Theme, Font } from './types';
 
+/**
+ * Collection of curated color themes.
+ * Themes are implemented using Tailwind CSS classes for performant color shifting.
+ */
 export const THEMES: Theme[] = [
   {
     id: 'amoled',
@@ -100,9 +103,13 @@ export const THEMES: Theme[] = [
   }
 ];
 
+/**
+ * Collection of available clock fonts.
+ * These rely on imports from Google Fonts in index.html.
+ */
 export const FONTS: Font[] = [
+  { id: 'rob-mono', name: 'Roboto Mono', family: "'Roboto Mono', monospace" },
   { id: 'jb-mono', name: 'JetBrains Mono', family: "'JetBrains Mono', monospace" },
   { id: 'bebas', name: 'Bebas Neue', family: "'Bebas Neue', cursive" },
-  { id: 'inter', name: 'Inter', family: "'Inter', sans-serif" },
-  { id: 'rob-mono', name: 'Roboto Mono', family: "'Roboto Mono', monospace" }
+  { id: 'inter', name: 'Inter', family: "'Inter', sans-serif" }
 ];

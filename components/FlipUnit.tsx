@@ -1,15 +1,23 @@
-
 import React from 'react';
 import FlipDigit from './FlipDigit';
 import { Theme } from '../types';
 
 interface FlipUnitProps {
+  /** The numeric value to split into tens and ones */
   value: number;
+  /** Text label displayed below the digits */
   label: string;
+  /** Active theme */
   theme: Theme;
+  /** Active font family */
   fontFamily: string;
 }
 
+/**
+ * FlipUnit Component
+ * Organizes two FlipDigits into a logical group (e.g., Hours, Minutes, or Seconds).
+ * Handles the calculation of tens and ones places.
+ */
 const FlipUnit: React.FC<FlipUnitProps> = ({ value, label, theme, fontFamily }) => {
   const tens = Math.floor(value / 10);
   const ones = value % 10;

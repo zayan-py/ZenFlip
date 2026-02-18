@@ -1,14 +1,21 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { Theme } from '../types';
 
 interface FlipDigitProps {
+  /** The value (0-9) to display */
   value: string | number;
+  /** Active theme for colors */
   theme: Theme;
+  /** Active font family string */
   fontFamily: string;
 }
 
+/**
+ * FlipDigit Component
+ * Renders a single mechanical flip digit with 3D animation.
+ * Logic uses a "flap" system where a leaf rotates 180 degrees to reveal the next value.
+ */
 const FlipDigit: React.FC<FlipDigitProps> = ({ value, theme, fontFamily }) => {
   const [currentValue, setCurrentValue] = useState(value);
   const [nextValue, setNextValue] = useState(value);
@@ -26,7 +33,7 @@ const FlipDigit: React.FC<FlipDigitProps> = ({ value, theme, fontFamily }) => {
         rotateX: -180,
         transition: { 
           duration: 0.5, 
-          ease: [0.4, 0, 0.2, 1] // Snappy mechanical curve
+          ease: [0.4, 0, 0.2, 1] 
         }
       }).then(() => {
         // Swap values and reset flap position
@@ -39,15 +46,12 @@ const FlipDigit: React.FC<FlipDigitProps> = ({ value, theme, fontFamily }) => {
     }
   }, [value, controls]);
 
-  // Dimensions
   const cardW = "w-16 sm:w-28";
   const cardH = "h-24 sm:h-44";
   const fontSize = "text-[5.5rem] sm:text-[9rem]";
   
   /**
-   * Helper to render the digit halves.
-   * To ensure the top and bottom meet perfectly, we render the text in a container 
-   * that is twice the height of the card half, then clip it.
+   * Helper to render one half of a flip card.
    */
   const DigitHalf = ({ val, type, overlayOpacity = 0 }: { val: string | number, type: 'top' | 'bottom', overlayOpacity?: number }) => (
     <div className={`absolute left-0 w-full h-full flex justify-center overflow-hidden ${theme.cardBg} ${theme.cardText} ${type === 'top' ? 'items-end rounded-t-xl' : 'items-start rounded-b-xl'}`}>
@@ -60,7 +64,6 @@ const FlipDigit: React.FC<FlipDigitProps> = ({ value, theme, fontFamily }) => {
       >
         {val}
       </div>
-      {/* Dynamic shadow/highlight overlays */}
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: `rgba(0,0,0,${overlayOpacity})` }} />
       {type === 'top' && <div className="absolute bottom-0 left-0 w-full h-[1px] bg-black/10" />}
     </div>
@@ -68,24 +71,17 @@ const FlipDigit: React.FC<FlipDigitProps> = ({ value, theme, fontFamily }) => {
 
   return (
     <div className={`relative ${cardW} ${cardH} perspective-1000 select-none group`}>
-      {/* 
-          Z-INDEX LAYERING:
-          1. Next Top (Static Bottom Layer)
-          2. Current Bottom (Static Bottom Layer)
-          3. Flipping Leaf (Top layer)
-      */}
-
-      {/* BACKGROUND: Static Bottom Half (Current) */}
+      {/* Background Bottom: Displays the current value */}
       <div className="absolute bottom-0 left-0 w-full h-1/2 z-10">
         <DigitHalf val={currentValue} type="bottom" />
       </div>
 
-      {/* BACKGROUND: Static Top Half (Next) */}
+      {/* Background Top: Displays the incoming value */}
       <div className="absolute top-0 left-0 w-full h-1/2 z-0">
         <DigitHalf val={nextValue} type="top" overlayOpacity={0.05} />
       </div>
 
-      {/* THE FLAP (Animated leaf) */}
+      {/* The Animated Leaf */}
       <motion.div
         animate={controls}
         initial={{ rotateX: 0 }}
@@ -100,7 +96,7 @@ const FlipDigit: React.FC<FlipDigitProps> = ({ value, theme, fontFamily }) => {
           transformOrigin: 'bottom',
         }}
       >
-        {/* FRONT: Top half of OLD value */}
+        {/* Front Half: Top portion of the old value */}
         <div
           className="absolute inset-0"
           style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
@@ -108,7 +104,7 @@ const FlipDigit: React.FC<FlipDigitProps> = ({ value, theme, fontFamily }) => {
           <DigitHalf val={currentValue} type="top" overlayOpacity={isFlipping ? 0.3 : 0} />
         </div>
 
-        {/* BACK: Bottom half of NEW value */}
+        {/* Back Half: Bottom portion of the new value */}
         <div
           className="absolute inset-0"
           style={{ 
@@ -121,13 +117,12 @@ const FlipDigit: React.FC<FlipDigitProps> = ({ value, theme, fontFamily }) => {
         </div>
       </motion.div>
 
-      {/* 4. MECHANICAL HINGE (Always on top) */}
+      {/* Aesthetic Hinge Element */}
       <div className="absolute top-1/2 left-0 w-full h-[2px] bg-black/40 z-50 pointer-events-none transform -translate-y-1/2 flex justify-between px-1">
         <div className="w-1.5 h-3 -mt-1.5 bg-black/60 rounded-full shadow-inner border border-white/5" />
         <div className="w-1.5 h-3 -mt-1.5 bg-black/60 rounded-full shadow-inner border border-white/5" />
       </div>
       
-      {/* Outer border depth */}
       <div className="absolute inset-0 rounded-xl border border-white/5 pointer-events-none z-[60] shadow-inner" />
     </div>
   );

@@ -1,5 +1,5 @@
 /**
- * Application operational modes
+ * Operational modes available in the application.
  */
 export enum Mode {
   CLOCK = 'CLOCK',
@@ -8,49 +8,56 @@ export enum Mode {
 }
 
 /**
- * Visual styling definitions for the app
+ * Defines the visual identity of the application.
  */
 export type Theme = {
   id: string;
   name: string;
-  bg: string;         // Tailwind background class
-  cardBg: string;     // Tailwind card background class
-  cardText: string;   // Tailwind text color class
-  accent: string;     // Tailwind accent/primary color
-  controlBg: string;  // Tailwind background for floating bars
-  shadow: string;     // Tailwind shadow class
-  uiText: string;     // Text color for UI controls
-  preview: string;    // Hex code for theme picker preview
+  bg: string;         // Tailwind CSS background class
+  cardBg: string;     // Tailwind CSS card color class
+  cardText: string;   // Tailwind CSS text color class
+  accent: string;     // Tailwind CSS primary accent color
+  controlBg: string;  // Background for floating UI panels
+  shadow: string;     // Shadow depth configuration
+  uiText: string;     // Text color for secondary UI labels
+  preview: string;    // Hex code for the theme selector preview
 };
 
 /**
- * Typography definitions
+ * Typography configuration for the clock digits.
  */
 export type Font = {
   id: string;
   name: string;
-  family: string;     // CSS font-family string
+  family: string;     // CSS Font Family property
 };
 
 /**
- * Audio configuration for ticking sounds
+ * Audio feedback configuration.
  */
 export type SoundSettings = {
+  /** The type of sound produced on every second/tick */
   tickType: 'none' | 'flip' | 'soft' | 'mech' | 'digital';
+  /** How often the audio feedback occurs in Clock mode */
   tickInterval: 'off' | '1s' | '1m' | '10m';
+  /** Normalized volume level (0.0 to 1.0) */
   tickVolume: number;
 };
 
 /**
- * Global application state settings
+ * Root configuration state for the application.
  */
 export type AppSettings = {
   themeId: string;
   fontId: string;
   is24h: boolean;
-  timerDuration: number; // Duration in seconds for TIMER mode
-  pomoFocus: number;     // Focus duration in minutes
-  pomoBreak: number;     // Break duration in minutes
-  pomoCycles: number;    // Number of cycles before reset
+  /** Custom duration for Timer mode (in seconds) */
+  timerDuration: number;
+  /** Focus duration for Pomodoro (in minutes) */
+  pomoFocus: number;
+  /** Break duration for Pomodoro (in minutes) */
+  pomoBreak: number;
+  /** Number of focus sessions per full cycle */
+  pomoCycles: number;
   sound: SoundSettings;
 };

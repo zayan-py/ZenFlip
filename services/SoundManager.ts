@@ -1,7 +1,14 @@
-
+/**
+ * SoundManager Service
+ * A singleton class that handles real-time audio synthesis for ticking and alarms.
+ * Uses the Web Audio API to generate tones without needing external assets.
+ */
 class SoundManager {
   private context: AudioContext | null = null;
 
+  /**
+   * Lazy-loads and resumes the AudioContext to comply with browser autoplay policies.
+   */
   private async getContext() {
     if (!this.context) {
       this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -12,6 +19,11 @@ class SoundManager {
     return this.context;
   }
 
+  /**
+   * Generates a short percussive tone based on the selected tick style.
+   * @param type - The synthesis preset to use
+   * @param volume - Normalized volume level (0 to 1)
+   */
   async playTick(type: string, volume: number) {
     if (type === 'none') return;
     const ctx = await this.getContext();
@@ -40,6 +52,7 @@ class SoundManager {
         osc.frequency.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
         break;
+      case 'digital':
       default:
         osc.type = 'sine';
         osc.frequency.setValueAtTime(1000, ctx.currentTime);
@@ -51,6 +64,9 @@ class SoundManager {
     osc.stop(ctx.currentTime + 0.1);
   }
 
+  /**
+   * Triggers a triplet beep sequence for timer completions.
+   */
   async playAlarm() {
     const ctx = await this.getContext();
     for (let i = 0; i < 3; i++) {

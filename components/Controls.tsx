@@ -1,23 +1,35 @@
-
 import React, { useState, useEffect } from 'react';
 import { Mode, Theme, Font, AppSettings, SoundSettings } from '../types';
 import { THEMES, FONTS } from '../constants';
 
 interface ControlsProps {
+  /** Current app mode */
   mode: Mode;
+  /** Callback to change mode */
   setMode: (m: Mode) => void;
+  /** Global app settings object */
   settings: AppSettings;
+  /** Partial updater for settings */
   updateSettings: (s: Partial<AppSettings>) => void;
+  /** Controls overall visibility of the bars */
   visible: boolean;
+  /** Callback to trigger visibility from child hover */
   onEnter: () => void;
+  /** If true, the UI stays hidden regardless of mouse movement */
   locked: boolean;
 }
 
+/**
+ * Controls Component
+ * Renders the top (modes) and bottom (settings) floating bars.
+ * Includes form handling for timer durations and theme/font selectors.
+ */
 const Controls: React.FC<ControlsProps> = ({
   mode, setMode, settings, updateSettings, visible, onEnter, locked
 }) => {
   const currentTheme = THEMES.find(t => t.id === settings.themeId) || THEMES[0];
 
+  // Local input states to allow for fluid typing (handling blank values)
   const [timerInput, setTimerInput] = useState(String(Math.floor(settings.timerDuration / 60)));
   const [pomoFocusInput, setPomoFocusInput] = useState(String(settings.pomoFocus));
   const [pomoBreakInput, setPomoBreakInput] = useState(String(settings.pomoBreak));
@@ -48,6 +60,7 @@ const Controls: React.FC<ControlsProps> = ({
 
   return (
     <>
+      {/* Top Bar: Mode Switcher */}
       <div 
         onMouseEnter={onEnter}
         className={`${barClasses} top-8 ${isUIReallyVisible ? 'translate-y-0' : '-translate-y-12'}`}
@@ -68,10 +81,12 @@ const Controls: React.FC<ControlsProps> = ({
         </div>
       </div>
 
+      {/* Bottom Bar: Settings & Customization */}
       <div 
         onMouseEnter={onEnter}
         className={`${barClasses} bottom-8 flex-wrap justify-center sm:flex-nowrap max-w-[95vw] ${isUIReallyVisible ? 'translate-y-0' : 'translate-y-12'}`}
       >
+        {/* Theme Picker */}
         <div className="flex items-center gap-3 border-r border-black/10 pr-4">
           <div className="flex gap-2">
             {THEMES.map(t => (
@@ -87,6 +102,7 @@ const Controls: React.FC<ControlsProps> = ({
           </div>
         </div>
 
+        {/* Font Picker */}
         <div className="flex items-center gap-2 border-r border-black/10 pr-4">
           <select 
             value={settings.fontId}
@@ -97,14 +113,13 @@ const Controls: React.FC<ControlsProps> = ({
           </select>
         </div>
 
+        {/* Mode-Specific Inputs */}
         {mode === Mode.TIMER && (
           <div className="flex items-center gap-2 border-r border-black/10 pr-4">
             <span className={`${currentTheme.uiText} text-[10px] font-black opacity-30 uppercase`}>Set Duration:</span>
             <div className="flex items-center gap-1">
               <input 
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
+                type="text" inputMode="numeric" pattern="[0-9]*"
                 value={timerInput}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -158,6 +173,7 @@ const Controls: React.FC<ControlsProps> = ({
           </div>
         )}
 
+        {/* Audio Settings */}
         <div className="flex items-center gap-2 border-r border-black/10 pr-4">
           <select 
             value={settings.sound.tickType}
@@ -182,6 +198,7 @@ const Controls: React.FC<ControlsProps> = ({
           </select>
         </div>
 
+        {/* Misc Options */}
         <div className="flex items-center">
           <button 
             onClick={() => updateSettings({ is24h: !settings.is24h })}
