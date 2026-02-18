@@ -35,6 +35,7 @@ const App: React.FC = () => {
 
   const [mode, setMode] = useState<Mode>(Mode.CLOCK);
   const [time, setTime] = useState(new Date());
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   const [timerLeft, setTimerLeft] = useState(60); 
   const [timerActive, setTimerActive] = useState(false);
@@ -51,6 +52,21 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('zenflip_settings', JSON.stringify(settings));
   }, [settings]);
+
+  // Monitor fullscreen changes
+  useEffect(() => {
+    const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(e => console.error(e));
+    } else {
+      document.exitFullscreen();
+    }
+  };
 
   // Main tick logic
   useEffect(() => {
@@ -108,7 +124,7 @@ const App: React.FC = () => {
     }
   }, [mode, settings.timerDuration, settings.pomoFocus]);
 
-  // Auto-hide UI system
+  // Auto-hide UI system (including mouse cursor)
   useEffect(() => {
     const checkIdle = setInterval(() => {
       if (Date.now() - lastInteractionRef.current > 3000) {
@@ -151,11 +167,7 @@ const App: React.FC = () => {
           setPomoCycle(1);
         }
       } else if (e.code === 'KeyF') {
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen();
-        } else {
-          document.exitFullscreen();
-        }
+        toggleFullscreen();
       }
     };
     window.addEventListener('keydown', handleKey);
@@ -184,76 +196,89 @@ const App: React.FC = () => {
   const font = FONTS.find(f => f.id === settings.fontId) || FONTS[0];
 
   return (
-    <div className={`min-h-screen w-full flex flex-col items-center justify-center transition-all duration-1000 overflow-hidden ${theme.bg}`}>
+    <div 
+      className={`min-h-screen w-full flex flex-col items-center justify-center transition-all duration-1000 overflow-hidden ${theme.bg} ${(!uiVisible && !isLocked) ? 'cursor-none' : ''}`}
+    >
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(0,0,0,0.1)_100%)]" />
 
-      <div className="relative flex flex-col items-center z-10 w-full px-4 max-w-7xl">
-        
-        <div className="h-16 flex items-center justify-center">
-          <div className={`transition-all duration-700 ${uiVisible && !isLocked ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-            {mode === Mode.POMODORO && (
-              <div className={`text-[10px] sm:text-xs uppercase tracking-[0.5em] font-black ${theme.accent} bg-black/5 px-4 py-1.5 rounded-full border border-black/5`}>
-                {pomoPhase} — Cycle {pomoCycle}/{settings.pomoCycles}
-              </div>
-            )}
-            {mode === Mode.TIMER && (
-               <div className={`text-[10px] sm:text-xs uppercase tracking-[0.5em] font-black ${theme.accent} bg-black/5 px-4 py-1.5 rounded-full border border-black/5`}>
-                {timerActive ? 'Running' : 'Paused'}
-             </div>
-            )}
-          </div>
-        </div>
+      {/* Fullscreen Button - Top Right */}
+      <button 
+        onClick={toggleFullscreen}
+        onMouseEnter={() => !isLocked && setUiVisible(true)}
+        className={`fixed top-8 right-8 p-3 rounded-full z-[60] transition-all duration-700 active:scale-90 ${theme.controlBg} ${theme.accent} border border-black/5 shadow-xl hover:bg-black/10
+          ${(uiVisible && !isLocked) ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-12 pointer-events-none'}`}
+        title="Toggle Fullscreen"
+      >
+        {isFullscreen ? (
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+        ) : (
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+        )}
+      </button>
 
-        <div className="flex items-center gap-4 sm:gap-12 flex-wrap justify-center py-12">
-          <FlipUnit value={h} label="Hours" theme={theme} fontFamily={font.family} />
-          <div className="flex flex-col gap-4 sm:gap-8 opacity-10 py-12 sm:py-20">
-             <div className={`w-2 h-2 sm:w-4 sm:h-4 rounded-full ${theme.accent} bg-current`} />
-             <div className={`w-2 h-2 sm:w-4 sm:h-4 rounded-full ${theme.accent} bg-current`} />
+      {/* Top Overlay: Phase Indicators (Shifted up so they don't offset central flex) */}
+      <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-20 transition-all duration-700 ${uiVisible && !isLocked ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+        {mode === Mode.POMODORO && (
+          <div className={`text-[10px] sm:text-xs uppercase tracking-[0.5em] font-black ${theme.accent} bg-black/5 px-4 py-1.5 rounded-full border border-black/5`}>
+            {pomoPhase} — Cycle {pomoCycle}/{settings.pomoCycles}
           </div>
-          <FlipUnit value={m} label="Minutes" theme={theme} fontFamily={font.family} />
-          <div className="flex flex-col gap-4 sm:gap-8 opacity-10 py-12 sm:py-20">
-             <div className={`w-2 h-2 sm:w-4 sm:h-4 rounded-full ${theme.accent} bg-current`} />
-             <div className={`w-2 h-2 sm:w-4 sm:h-4 rounded-full ${theme.accent} bg-current`} />
-          </div>
-          <FlipUnit value={s} label="Seconds" theme={theme} fontFamily={font.family} />
-          {ampm && (
-            <div className={`absolute top-0 right-0 sm:relative sm:top-0 sm:right-0 text-xl font-black opacity-30 mt-[-20px] ${theme.accent}`}>
-              {ampm}
-            </div>
-          )}
-        </div>
-
-        <div className="h-24 flex items-center justify-center relative w-full">
-          {(mode === Mode.TIMER || mode === Mode.POMODORO) && (
-            <div className={`flex gap-12 transition-all duration-700 ${uiVisible && !isLocked ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
-              <button 
-                onClick={() => setTimerActive(!timerActive)}
-                className={`p-6 sm:p-8 rounded-full transition-all active:scale-90 ${theme.controlBg} ${theme.accent} hover:bg-black/10 border border-black/5 shadow-2xl group`}
-              >
-                {timerActive ? (
-                  <svg className="w-8 h-8 sm:w-10 sm:h-10 transition-transform group-hover:scale-110" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                ) : (
-                  <svg className="w-8 h-8 sm:w-10 sm:h-10 ml-1 transition-transform group-hover:scale-110" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                )}
-              </button>
-              <button 
-                onClick={() => {
-                  setTimerActive(false);
-                  if (mode === Mode.TIMER) setTimerLeft(settings.timerDuration);
-                  else {
-                     setTimerLeft(settings.pomoFocus * 60);
-                     setPomoPhase('focus');
-                     setPomoCycle(1);
-                  }
-                }}
-                className={`p-6 sm:p-8 rounded-full transition-all active:scale-90 ${theme.controlBg} ${theme.accent} hover:bg-black/10 border border-black/5 shadow-2xl group`}
-              >
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 transition-transform group-hover:rotate-180" fill="currentColor" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-              </button>
-            </div>
-          )}
-        </div>
+        )}
+        {mode === Mode.TIMER && (
+           <div className={`text-[10px] sm:text-xs uppercase tracking-[0.5em] font-black ${theme.accent} bg-black/5 px-4 py-1.5 rounded-full border border-black/5`}>
+            {timerActive ? 'Running' : 'Paused'}
+         </div>
+        )}
       </div>
+
+      {/* MATHEMATICAL CENTER: The Clock Group */}
+      <div className="relative flex items-center gap-4 sm:gap-12 flex-wrap justify-center z-10 w-full px-4 max-w-7xl">
+        <FlipUnit value={h} label="Hours" theme={theme} fontFamily={font.family} />
+        <div className="flex flex-col gap-4 sm:gap-8 opacity-10 py-12 sm:py-20">
+           <div className={`w-2 h-2 sm:w-4 sm:h-4 rounded-full ${theme.accent} bg-current`} />
+           <div className={`w-2 h-2 sm:w-4 sm:h-4 rounded-full ${theme.accent} bg-current`} />
+        </div>
+        <FlipUnit value={m} label="Minutes" theme={theme} fontFamily={font.family} />
+        <div className="flex flex-col gap-4 sm:gap-8 opacity-10 py-12 sm:py-20">
+           <div className={`w-2 h-2 sm:w-4 sm:h-4 rounded-full ${theme.accent} bg-current`} />
+           <div className={`w-2 h-2 sm:w-4 sm:h-4 rounded-full ${theme.accent} bg-current`} />
+        </div>
+        <FlipUnit value={s} label="Seconds" theme={theme} fontFamily={font.family} />
+        {ampm && (
+          <div className={`absolute top-0 right-0 sm:relative sm:top-0 sm:right-0 text-xl font-black opacity-30 mt-[-20px] ${theme.accent}`}>
+            {ampm}
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Overlay: Play/Reset Controls (Shifted down so they don't offset central flex) */}
+      {(mode === Mode.TIMER || mode === Mode.POMODORO) && (
+        <div className={`fixed bottom-28 left-1/2 -translate-x-1/2 z-20 flex gap-12 transition-all duration-700 ${uiVisible && !isLocked ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+          <button 
+            onClick={() => setTimerActive(!timerActive)}
+            className={`p-6 sm:p-8 rounded-full transition-all active:scale-90 ${theme.controlBg} ${theme.accent} hover:bg-black/10 border border-black/5 shadow-2xl group`}
+          >
+            {timerActive ? (
+              <svg className="w-8 h-8 sm:w-10 sm:h-10 transition-transform group-hover:scale-110" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            ) : (
+              <svg className="w-8 h-8 sm:w-10 sm:h-10 ml-1 transition-transform group-hover:scale-110" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            )}
+          </button>
+          <button 
+            onClick={() => {
+              setTimerActive(false);
+              if (mode === Mode.TIMER) setTimerLeft(settings.timerDuration);
+              else {
+                 setTimerLeft(settings.pomoFocus * 60);
+                 setPomoPhase('focus');
+                 setPomoCycle(1);
+              }
+            }}
+            className={`p-6 sm:p-8 rounded-full transition-all active:scale-90 ${theme.controlBg} ${theme.accent} hover:bg-black/10 border border-black/5 shadow-2xl group`}
+          >
+            <svg className="w-8 h-8 sm:w-10 sm:h-10 transition-transform group-hover:rotate-180" fill="currentColor" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+          </button>
+        </div>
+      )}
 
       <Controls 
         mode={mode}
