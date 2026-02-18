@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Mode, Theme, Font, AppSettings, SoundSettings } from '../types';
 import { THEMES, FONTS } from '../constants';
@@ -22,14 +23,12 @@ interface ControlsProps {
 /**
  * Controls Component
  * Renders the top (modes) and bottom (settings) floating bars.
- * Includes form handling for timer durations and theme/font selectors.
  */
 const Controls: React.FC<ControlsProps> = ({
   mode, setMode, settings, updateSettings, visible, onEnter, locked
 }) => {
   const currentTheme = THEMES.find(t => t.id === settings.themeId) || THEMES[0];
 
-  // Local input states to allow for fluid typing (handling blank values)
   const [timerInput, setTimerInput] = useState(String(Math.floor(settings.timerDuration / 60)));
   const [pomoFocusInput, setPomoFocusInput] = useState(String(settings.pomoFocus));
   const [pomoBreakInput, setPomoBreakInput] = useState(String(settings.pomoBreak));
@@ -58,9 +57,12 @@ const Controls: React.FC<ControlsProps> = ({
 
   const inputBase = `bg-transparent text-center ${currentTheme.uiText} text-[10px] sm:text-xs font-bold outline-none border-b border-black/10`;
 
+  // Filter themes into groups for assortment (5 Dark, 5 Light)
+  const darkThemes = THEMES.slice(0, 5);
+  const lightThemes = THEMES.slice(5);
+
   return (
     <>
-      {/* Top Bar: Mode Switcher */}
       <div 
         onMouseEnter={onEnter}
         className={`${barClasses} top-8 ${isUIReallyVisible ? 'translate-y-0' : '-translate-y-12'}`}
@@ -81,28 +83,43 @@ const Controls: React.FC<ControlsProps> = ({
         </div>
       </div>
 
-      {/* Bottom Bar: Settings & Customization */}
       <div 
         onMouseEnter={onEnter}
         className={`${barClasses} bottom-8 flex-wrap justify-center sm:flex-nowrap max-w-[95vw] ${isUIReallyVisible ? 'translate-y-0' : 'translate-y-12'}`}
       >
-        {/* Theme Picker */}
         <div className="flex items-center gap-3 border-r border-black/10 pr-4">
-          <div className="flex gap-2">
-            {THEMES.map(t => (
-              <button
-                key={t.id}
-                onClick={() => updateSettings({ themeId: t.id })}
-                style={{ backgroundColor: t.preview }}
-                className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 transition-all active:scale-90
-                  ${settings.themeId === t.id ? 'border-white scale-125 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                title={t.name}
-              />
-            ))}
+          <div className="flex items-center gap-2">
+            {/* Dark Group */}
+            <div className="flex gap-1.5">
+              {darkThemes.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => updateSettings({ themeId: t.id })}
+                  style={{ backgroundColor: t.preview }}
+                  className={`w-5 h-5 rounded-full border-2 transition-all active:scale-90
+                    ${settings.themeId === t.id ? 'border-white scale-125' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                  title={t.name}
+                />
+              ))}
+            </div>
+            {/* Minimal Divider */}
+            <div className="w-[1px] h-4 bg-black/20 mx-1" />
+            {/* Light Group */}
+            <div className="flex gap-1.5">
+              {lightThemes.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => updateSettings({ themeId: t.id })}
+                  style={{ backgroundColor: t.preview }}
+                  className={`w-5 h-5 rounded-full border-2 transition-all active:scale-90
+                    ${settings.themeId === t.id ? (t.id === 'bw' || t.id === 'sky' ? 'border-black' : 'border-black/50') + ' scale-125' : 'border-black/5 opacity-60 hover:opacity-100'}`}
+                  title={t.name}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Font Picker */}
         <div className="flex items-center gap-2 border-r border-black/10 pr-4">
           <select 
             value={settings.fontId}
@@ -113,7 +130,6 @@ const Controls: React.FC<ControlsProps> = ({
           </select>
         </div>
 
-        {/* Mode-Specific Inputs */}
         {mode === Mode.TIMER && (
           <div className="flex items-center gap-2 border-r border-black/10 pr-4">
             <span className={`${currentTheme.uiText} text-[10px] font-black opacity-30 uppercase`}>Set Duration:</span>
@@ -173,7 +189,6 @@ const Controls: React.FC<ControlsProps> = ({
           </div>
         )}
 
-        {/* Audio Settings */}
         <div className="flex items-center gap-2 border-r border-black/10 pr-4">
           <select 
             value={settings.sound.tickType}
@@ -198,7 +213,6 @@ const Controls: React.FC<ControlsProps> = ({
           </select>
         </div>
 
-        {/* Misc Options */}
         <div className="flex items-center">
           <button 
             onClick={() => updateSettings({ is24h: !settings.is24h })}

@@ -21,6 +21,7 @@ export type Theme = {
   shadow: string;     // Shadow depth configuration
   uiText: string;     // Text color for secondary UI labels
   preview: string;    // Hex code for the theme selector preview
+  isLight?: boolean;  // Flag for light mode specific logic
 };
 
 /**

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Mode, AppSettings, SoundSettings, Theme, Font } from './types';
 import { THEMES, FONTS } from './constants';
 import FlipUnit from './components/FlipUnit';
@@ -19,6 +20,29 @@ const DEFAULT_SETTINGS: AppSettings = {
     tickVolume: 0.2
   }
 };
+
+/**
+ * Professional Minimalist SVG Cloud background for the Sky theme.
+ */
+const SkyBackground: React.FC = () => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+    <div className="absolute top-[10%] left-[-5%] w-[400px] opacity-20 animate-[pulse_15s_infinite]">
+      <svg viewBox="0 0 200 60" fill="white">
+        <path d="M10,40 Q10,10 40,10 Q60,10 70,30 Q80,10 120,10 Q160,10 160,40 Q160,55 130,55 L40,55 Q10,55 10,40 Z" />
+      </svg>
+    </div>
+    <div className="absolute top-[45%] right-[-10%] w-[500px] opacity-30 animate-[pulse_20s_infinite_reverse]">
+      <svg viewBox="0 0 200 60" fill="white">
+        <path d="M20,45 Q20,15 50,15 Q75,15 85,35 Q100,10 140,10 Q180,10 180,45 Q180,60 140,60 L60,60 Q20,60 20,45 Z" />
+      </svg>
+    </div>
+    <div className="absolute bottom-[5%] left-[15%] w-[350px] opacity-15 animate-[pulse_18s_infinite]">
+      <svg viewBox="0 0 200 60" fill="white">
+        <path d="M10,40 Q10,10 40,10 Q60,10 70,30 Q80,10 120,10 Q160,10 160,40 Q160,55 130,55 L40,55 Q10,55 10,40 Z" />
+      </svg>
+    </div>
+  </div>
+);
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>(() => {
@@ -58,13 +82,23 @@ const App: React.FC = () => {
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(e => console.error(e));
     } else {
       document.exitFullscreen();
     }
-  };
+  }, []);
+
+  const handleReset = useCallback(() => {
+    setTimerActive(false);
+    if (mode === Mode.TIMER) setTimerLeft(settings.timerDuration);
+    else if (mode === Mode.POMODORO) {
+      setTimerLeft(settings.pomoFocus * 60);
+      setPomoPhase('focus');
+      setPomoCycle(1);
+    }
+  }, [mode, settings.timerDuration, settings.pomoFocus]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -72,7 +106,6 @@ const App: React.FC = () => {
         const now = new Date();
         setTime(now);
         if (settings.sound.tickInterval !== 'off') {
-          const s = now.getSeconds();
           if (settings.sound.tickInterval === '1s') {
             soundManager.playTick(settings.sound.tickType, settings.sound.tickVolume);
           }
@@ -124,13 +157,30 @@ const App: React.FC = () => {
       if (!isLocked) setUiVisible(true);
     };
 
+    const handleKey = (e: KeyboardEvent) => {
+      onShow();
+      if (isLocked) return;
+      
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'SELECT') return;
+
+      if (e.key === ' ') {
+        e.preventDefault();
+        if (mode !== Mode.CLOCK) setTimerActive(prev => !prev);
+      } else if (e.key.toLowerCase() === 'r') {
+        handleReset();
+      } else if (e.key.toLowerCase() === 'f') {
+        toggleFullscreen();
+      }
+    };
+
     const onHide = () => {
       setUiVisible(false);
     };
 
     window.addEventListener('mousemove', onShow);
     window.addEventListener('mousedown', onShow);
-    window.addEventListener('keydown', onShow);
+    window.addEventListener('keydown', handleKey);
     window.addEventListener('touchstart', onShow);
     window.addEventListener('mouseenter', onShow);
     window.addEventListener('mouseleave', onHide);
@@ -139,12 +189,12 @@ const App: React.FC = () => {
       clearInterval(checkIdle);
       window.removeEventListener('mousemove', onShow);
       window.removeEventListener('mousedown', onShow);
-      window.removeEventListener('keydown', onShow);
+      window.removeEventListener('keydown', handleKey);
       window.removeEventListener('touchstart', onShow);
       window.removeEventListener('mouseenter', onShow);
       window.removeEventListener('mouseleave', onHide);
     };
-  }, [isLocked]);
+  }, [isLocked, mode, handleReset, toggleFullscreen]);
 
   const getDisplayTime = () => {
     if (mode === Mode.CLOCK) {
@@ -169,8 +219,8 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen w-full flex flex-col items-center justify-center transition-colors duration-1000 overflow-hidden ${theme.bg} ${(!uiVisible && !isLocked) ? 'cursor-none' : ''}`}>
-      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(0,0,0,0.1)_100%)]" />
-
+      {settings.themeId === 'sky' && <SkyBackground />}
+      
       <button onClick={toggleFullscreen} className={`fixed top-8 right-8 p-3 rounded-full z-[60] transition-all duration-700 active:scale-90 ${theme.controlBg} ${theme.accent} border border-black/5 shadow-xl ${(uiVisible && !isLocked) ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-12 pointer-events-none'}`}>
         {isFullscreen ? <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg> : <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>}
       </button>
@@ -200,13 +250,17 @@ const App: React.FC = () => {
           <button onClick={() => setTimerActive(!timerActive)} className={`p-6 sm:p-8 rounded-full transition-all active:scale-90 ${theme.controlBg} ${theme.accent} border border-black/5 shadow-2xl`}>
             {timerActive ? <svg className="w-8 h-8 sm:w-10 sm:h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg> : <svg className="w-8 h-8 sm:w-10 sm:h-10 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>}
           </button>
-          <button onClick={() => { setTimerActive(false); if (mode === Mode.TIMER) setTimerLeft(settings.timerDuration); else { setTimerLeft(settings.pomoFocus * 60); setPomoPhase('focus'); setPomoCycle(1); }}} className={`p-6 sm:p-8 rounded-full transition-all active:scale-90 ${theme.controlBg} ${theme.accent} border border-black/5 shadow-2xl group`}>
+          <button onClick={handleReset} className={`p-6 sm:p-8 rounded-full transition-all active:scale-90 ${theme.controlBg} ${theme.accent} border border-black/5 shadow-2xl group`}>
             <svg className="w-8 h-8 sm:w-10 sm:h-10 group-hover:rotate-180 transition-transform duration-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
           </button>
         </div>
       )}
 
       <Controls mode={mode} setMode={setMode} settings={settings} updateSettings={updateSettings} visible={uiVisible} onEnter={() => setUiVisible(true)} locked={isLocked} />
+
+      <div className={`fixed bottom-8 left-8 transition-all duration-700 z-50 ${uiVisible && !isLocked ? 'opacity-40 translate-x-0' : 'opacity-0 -translate-x-12 pointer-events-none'} ${theme.accent} text-[10px] font-black uppercase tracking-widest pointer-events-none`}>
+        SPACE: Start/Pause • R: Reset • F: Fullscreen
+      </div>
 
       <div className="fixed bottom-0 right-0 w-48 h-48 z-[100] cursor-pointer group flex items-end justify-end p-8" onClick={() => { setIsLocked(!isLocked); setUiVisible(false); }}>
         <div className={`p-4 rounded-full transition-all duration-300 transform border border-white/10 ${theme.cardBg} ${theme.cardText} ${uiVisible && !isLocked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} ${isLocked ? 'scale-90' : 'scale-100'}`}>
