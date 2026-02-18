@@ -15,8 +15,7 @@ interface FlipUnitProps {
 
 /**
  * FlipUnit Component
- * Organizes two FlipDigits into a logical group (e.g., Hours, Minutes, or Seconds).
- * Handles the calculation of tens and ones places.
+ * Organizes two FlipDigits into a logical group.
  */
 const FlipUnit: React.FC<FlipUnitProps> = ({ value, label, theme, fontFamily }) => {
   const tens = Math.floor(value / 10);
@@ -24,7 +23,7 @@ const FlipUnit: React.FC<FlipUnitProps> = ({ value, label, theme, fontFamily }) 
 
   return (
     <div className="flex flex-col items-center gap-6 sm:gap-12">
-      <div className="flex gap-2 sm:gap-4 items-center">
+      <div className="flex gap-2 sm:gap-4 items-center digit-pair-shadow">
         <FlipDigit value={tens} theme={theme} fontFamily={fontFamily} />
         <FlipDigit value={ones} theme={theme} fontFamily={fontFamily} />
       </div>
