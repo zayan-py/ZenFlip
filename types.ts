@@ -1,10 +1,12 @@
+
 /**
  * Operational modes available in the application.
  */
 export enum Mode {
   CLOCK = 'CLOCK',
   TIMER = 'TIMER',
-  POMODORO = 'POMODORO'
+  POMODORO = 'POMODORO',
+  STOPWATCH = 'STOPWATCH'
 }
 
 /**

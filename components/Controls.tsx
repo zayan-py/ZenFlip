@@ -68,7 +68,7 @@ const Controls: React.FC<ControlsProps> = ({
         className={`${barClasses} top-8 ${isUIReallyVisible ? 'translate-y-0' : '-translate-y-12'}`}
       >
         <div className="flex items-center gap-1 sm:gap-2">
-          {[Mode.CLOCK, Mode.TIMER, Mode.POMODORO].map(m => (
+          {[Mode.CLOCK, Mode.TIMER, Mode.STOPWATCH, Mode.POMODORO].map(m => (
             <button
               key={m}
               onClick={() => setMode(m)}

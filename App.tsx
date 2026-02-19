@@ -61,6 +61,7 @@ const App: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   
   const [timerLeft, setTimerLeft] = useState(60); 
+  const [stopwatchTime, setStopwatchTime] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
   const [pomoPhase, setPomoPhase] = useState<'focus' | 'break'>('focus');
   const [pomoCycle, setPomoCycle] = useState(1);
@@ -97,6 +98,8 @@ const App: React.FC = () => {
       setTimerLeft(settings.pomoFocus * 60);
       setPomoPhase('focus');
       setPomoCycle(1);
+    } else if (mode === Mode.STOPWATCH) {
+      setStopwatchTime(0);
     }
   }, [mode, settings.timerDuration, settings.pomoFocus]);
 
@@ -110,8 +113,13 @@ const App: React.FC = () => {
             soundManager.playTick(settings.sound.tickType, settings.sound.tickVolume);
           }
         }
-      } else if (timerActive && timerLeft > 0) {
-        setTimerLeft(prev => prev - 1);
+      } else if (timerActive) {
+        if (mode === Mode.STOPWATCH) {
+          setStopwatchTime(prev => prev + 1);
+        } else if (timerLeft > 0) {
+          setTimerLeft(prev => prev - 1);
+        }
+        
         if (settings.sound.tickInterval === '1s') {
             soundManager.playTick(settings.sound.tickType, settings.sound.tickVolume);
         }
@@ -121,7 +129,7 @@ const App: React.FC = () => {
   }, [mode, timerActive, timerLeft, settings.sound]);
 
   useEffect(() => {
-    if (timerActive && timerLeft === 0) {
+    if (timerActive && timerLeft === 0 && (mode === Mode.TIMER || mode === Mode.POMODORO)) {
       setTimerActive(false);
       soundManager.playAlarm();
       if (mode === Mode.POMODORO) {
@@ -138,12 +146,18 @@ const App: React.FC = () => {
     }
   }, [timerLeft, timerActive, mode, pomoPhase, settings]);
 
+  // Handle value initialization when switching modes or updating duration settings.
+  // CRITICAL: We DO NOT put `timerActive` in the dependency list here, 
+  // because we don't want the values to reset to default every time the user pauses.
   useEffect(() => {
-    if (!timerActive) {
-      if (mode === Mode.TIMER) setTimerLeft(settings.timerDuration);
-      if (mode === Mode.POMODORO) setTimerLeft(settings.pomoFocus * 60);
+    if (mode === Mode.TIMER) setTimerLeft(settings.timerDuration);
+    if (mode === Mode.POMODORO) {
+      setPomoPhase('focus');
+      setTimerLeft(settings.pomoFocus * 60);
     }
-  }, [mode, settings.timerDuration, settings.pomoFocus, timerActive]);
+    if (mode === Mode.STOPWATCH) setStopwatchTime(0);
+    setTimerActive(false); // Stop any running timer when mode changes
+  }, [mode, settings.timerDuration, settings.pomoFocus, settings.pomoBreak]);
 
   useEffect(() => {
     const checkIdle = setInterval(() => {
@@ -205,6 +219,11 @@ const App: React.FC = () => {
         h = h % 12 || 12;
       }
       return { h, m: time.getMinutes(), s: time.getSeconds(), ampm };
+    } else if (mode === Mode.STOPWATCH) {
+      let h = Math.floor(stopwatchTime / 3600);
+      let m = Math.floor((stopwatchTime % 3600) / 60);
+      let s = stopwatchTime % 60;
+      return { h: Math.min(h, 99), m, s, ampm: '' };
     } else {
       let h = Math.floor(timerLeft / 3600);
       let m = Math.floor((timerLeft % 3600) / 60);
@@ -227,7 +246,7 @@ const App: React.FC = () => {
 
       <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-20 transition-all duration-700 ${uiVisible && !isLocked ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
         {mode === Mode.POMODORO && <div className={`text-[10px] sm:text-xs uppercase tracking-[0.5em] font-black ${theme.accent} bg-black/5 px-4 py-1.5 rounded-full border border-black/5`}>{pomoPhase} — Cycle {pomoCycle}/{settings.pomoCycles}</div>}
-        {mode === Mode.TIMER && <div className={`text-[10px] sm:text-xs uppercase tracking-[0.5em] font-black ${theme.accent} bg-black/5 px-4 py-1.5 rounded-full border border-black/5`}>{timerActive ? 'Running' : 'Paused'}</div>}
+        {(mode === Mode.TIMER || mode === Mode.STOPWATCH) && <div className={`text-[10px] sm:text-xs uppercase tracking-[0.5em] font-black ${theme.accent} bg-black/5 px-4 py-1.5 rounded-full border border-black/5`}>{timerActive ? 'Running' : 'Paused'}</div>}
       </div>
 
       <div className="relative flex items-center gap-4 sm:gap-12 flex-wrap justify-center z-10 w-full px-4 max-w-7xl">
@@ -245,7 +264,7 @@ const App: React.FC = () => {
         {ampm && <div className={`absolute top-0 right-0 sm:relative sm:top-0 sm:right-0 text-xl font-black opacity-30 mt-[-20px] ${theme.accent}`}>{ampm}</div>}
       </div>
 
-      {(mode === Mode.TIMER || mode === Mode.POMODORO) && (
+      {(mode === Mode.TIMER || mode === Mode.POMODORO || mode === Mode.STOPWATCH) && (
         <div className={`fixed bottom-28 left-1/2 -translate-x-1/2 z-20 flex gap-12 transition-all duration-700 ${uiVisible && !isLocked ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
           <button onClick={() => setTimerActive(!timerActive)} className={`p-6 sm:p-8 rounded-full transition-all active:scale-90 ${theme.controlBg} ${theme.accent} border border-black/5 shadow-2xl`}>
             {timerActive ? <svg className="w-8 h-8 sm:w-10 sm:h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg> : <svg className="w-8 h-8 sm:w-10 sm:h-10 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>}
